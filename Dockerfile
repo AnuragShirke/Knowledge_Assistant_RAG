@@ -2,6 +2,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
+# Install curl for the wait script
+RUN apt-get update && apt-get install -y curl
+
 # Set the working directory in the container
 WORKDIR /app
 

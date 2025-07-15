@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# The base ollama image doesn't have curl, so we install it.
+# We'll attempt to update and install curl. This requires root privileges.
+apt-get update && apt-get install -y curl
+
 # Start Ollama in the background
 /bin/ollama serve &
 
