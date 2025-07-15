@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+PyMuPDF
+pdfminer.six
+beautifulsoup4
+sentence-transformers
+qdrant-client
+langchain
+ollama
+fastapi-users[sqlalchemy]
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic-settings
+sqlalchemy
+psycopg2-binary
