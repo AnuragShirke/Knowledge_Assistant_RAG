@@ -25,9 +25,11 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    entrypoint: ["/app/ollama_entrypoint.sh"]
     ports:
       - "11434:11434"
     volumes:
+      - ./scripts:/app
       - ollama_data:/root/.ollama
 
 volumes:
