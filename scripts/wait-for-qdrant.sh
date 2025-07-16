@@ -14,4 +14,4 @@ until curl -s -f "$host/healthz" > /dev/null; do
 done
 
 >&2 echo "Qdrant is up - executing command"
-exec $cmd
+    exec "$@"

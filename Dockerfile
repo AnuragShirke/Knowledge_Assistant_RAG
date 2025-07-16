@@ -11,6 +11,9 @@ WORKDIR /app
 # Copy the requirements file into the container
 COPY requirements.txt .
 
+# Set a higher timeout for pip installations
+ENV PIP_DEFAULT_TIMEOUT=1000
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 

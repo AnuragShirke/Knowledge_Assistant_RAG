@@ -12,7 +12,7 @@ def get_ollama_client():
 
 def format_prompt(query: str, context: list[dict]) -> str:
     """Formats the prompt for the LLM with the retrieved context."""
-    context_str = "\n".join([item['payload']['text'] for item in context])
+    context_str = "\n".join([item.payload.get('text') for item in context])
     prompt = f"""**Instruction**:
 Answer the user's query based *only* on the provided context.
 If the context does not contain the answer, state that you cannot answer the question with the given information.

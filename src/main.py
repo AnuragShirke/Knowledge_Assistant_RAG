@@ -11,7 +11,7 @@ app = FastAPI()
 # --- Constants ---
 UPLOADS_DIR = "uploads"
 QDRANT_COLLECTION_NAME = "knowledge_base"
-OLLAMA_MODEL = "llama3"
+OLLAMA_MODEL = "tinyllama"
 
 # --- Application Startup ---
 # Create uploads directory if it doesn't exist
@@ -87,11 +87,17 @@ def query_knowledge_base(request: QueryRequest):
         # 4. Generate a response from the LLM
         answer = generate_response(ollama_client, OLLAMA_MODEL, prompt)
 
+        # Debugging: Print search_results structure
+        print(f"Type of search_results: {type(search_results)}")
+        if search_results:
+            print(f"Type of first element in search_results: {type(search_results[0])}")
+            print(f"Content of first element in search_results: {search_results[0]}")
+
         # 5. Extract source documents for citation
         source_documents = [
             {
-                "source": result.payload["source"],
-                "text": result.payload["text"],
+                "source": result.payload.get("source") if result.payload else "Unknown",
+                "text": result.payload.get("text") if result.payload else "N/A",
                 "score": result.score
             }
             for result in search_results

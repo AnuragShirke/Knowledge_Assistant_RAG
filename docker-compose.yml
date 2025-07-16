@@ -15,7 +15,7 @@ services:
     environment:
       - QDRANT_HOST=qdrant
       - OLLAMA_HOST=ollama
-    entrypoint: ["/app/scripts/wait-for-qdrant.sh", "qdrant:6333", "--", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    entrypoint: ["/app/scripts/wait-for-qdrant.sh", "qdrant:6333", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -33,6 +33,7 @@ services:
     volumes:
       - ./scripts:/app
       - ollama_data:/root/.ollama
+    mem_limit: 6.5g
 
 volumes:
   qdrant_data:

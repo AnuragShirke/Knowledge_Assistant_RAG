@@ -29,7 +29,7 @@ def upsert_vectors(client: QdrantClient, collection_name: str, vectors, payloads
     client.upsert(
         collection_name=collection_name,
         points=models.Batch(
-            ids=None,  # Let Qdrant assign IDs
+            ids=list(range(len(vectors))),  # Generate sequential integer IDs
             vectors=vectors,
             payloads=payloads
         ),
