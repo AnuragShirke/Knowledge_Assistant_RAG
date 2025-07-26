@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -34,6 +33,13 @@ services:
       - ./scripts:/app
       - ollama_data:/root/.ollama
     mem_limit: 6.5g
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 volumes:
   qdrant_data:

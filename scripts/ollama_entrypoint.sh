@@ -18,7 +18,7 @@ done
 
 # Pull the model
 echo "Ollama server started. Pulling llama3 model..."
-ollama pull phi3
+ollama pull llama3
 
 # Wait for the background process to exit
 wait $pid

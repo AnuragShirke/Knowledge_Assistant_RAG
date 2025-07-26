@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code into the container
 COPY ./src /app/src
+COPY ./scripts /app/scripts
 
 # Expose port 8000 to allow communication to the Uvicorn server
 EXPOSE 8000

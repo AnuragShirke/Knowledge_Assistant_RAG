@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import shutil
 import os
-from .core.processing import parse_pdf, chunk_text, get_embedding_model
+from .core.processing import parse_document, chunk_text, get_embedding_model
 from .core.vector_store import get_qdrant_client, create_collection_if_not_exists, upsert_vectors, search_vectors
 from .core.llm import get_ollama_client, format_prompt, generate_response
 from .core.models import QueryRequest, QueryResponse
@@ -11,7 +11,7 @@ app = FastAPI()
 # --- Constants ---
 UPLOADS_DIR = "uploads"
 QDRANT_COLLECTION_NAME = "knowledge_base"
-OLLAMA_MODEL = "tinyllama"
+OLLAMA_MODEL = "llama3"
 
 # --- Application Startup ---
 # Create uploads directory if it doesn't exist
@@ -32,8 +32,9 @@ create_collection_if_not_exists(qdrant_client, QDRANT_COLLECTION_NAME, embedding
 # --- API Endpoints ---
 @app.post("/upload")
 def upload_file(file: UploadFile = File(...)):
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Only PDFs are supported.")
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file_extension not in [".pdf", ".txt", ".docx"]:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PDF, TXT, and DOCX files are supported.")
 
     file_path = os.path.join(UPLOADS_DIR, file.filename)
     
@@ -44,7 +45,7 @@ def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
         
     try:
-        text = parse_pdf(file_path)
+        text = parse_document(file_path, file_extension)
         if not text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from the PDF.")
 
