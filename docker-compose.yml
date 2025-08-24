@@ -1,6 +1,32 @@
-version: '3.8'
-
 services:
+  frontend:
+    build:
+      context: ./rag-quest-hub
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:8080"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://backend:8000
+      - VITE_API_TIMEOUT=30000
+      - VITE_ENABLE_REGISTRATION=true
+    volumes:
+      # Development volume mounts for hot reload
+      - ./rag-quest-hub/src:/app/src
+      - ./rag-quest-hub/public:/app/public
+      - ./rag-quest-hub/package.json:/app/package.json
+      - ./rag-quest-hub/vite.config.ts:/app/vite.config.ts
+      - ./rag-quest-hub/tailwind.config.ts:/app/tailwind.config.ts
+      - ./rag-quest-hub/tsconfig.json:/app/tsconfig.json
+      - ./rag-quest-hub/postcss.config.js:/app/postcss.config.js
+      - ./rag-quest-hub/components.json:/app/components.json
+      - ./rag-quest-hub/.env.production:/app/.env.production
+      # Exclude node_modules from volume mount to avoid conflicts
+      - /app/node_modules
+    networks:
+      - app-network
+
   backend:
     build: .
     ports:
@@ -8,13 +34,25 @@ services:
     volumes:
       - ./src:/app/src
       - ./scripts:/app/scripts
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - db_data:/app/data  # SQLite database volume
     depends_on:
       - qdrant
       - ollama
     environment:
       - QDRANT_HOST=qdrant
       - OLLAMA_HOST=ollama
-    entrypoint: ["/app/scripts/wait-for-qdrant.sh", "qdrant:6333", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+      - OLLAMA_MODEL=llama3.2:1b
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://frontend:8080
+      - DATABASE_URL=sqlite+aiosqlite:///./data/knowledge_assistant.db
+      - JWT_SECRET=your-super-secret-jwt-key-for-development-only
+      - JWT_LIFETIME_SECONDS=3600
+      - USER_REGISTRATION_ENABLED=true
+      - EMAIL_VERIFICATION_REQUIRED=false
+    entrypoint: ["/app/scripts/wait-for-qdrant.sh", "qdrant:6333", "/app/scripts/init-db.sh"]
+    networks:
+      - app-network
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -23,6 +61,8 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    networks:
+      - app-network
 
   ollama:
     image: ollama/ollama:latest
@@ -32,15 +72,14 @@ services:
     volumes:
       - ./scripts:/app
       - ollama_data:/root/.ollama
-    mem_limit: 6.5g
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    networks:
+      - app-network
 
 volumes:
   qdrant_data:
   ollama_data:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge

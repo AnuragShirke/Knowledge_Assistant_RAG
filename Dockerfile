@@ -17,13 +17,28 @@ ENV PIP_DEFAULT_TIMEOUT=1000
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Ensure Python scripts are in PATH
+ENV PATH="/usr/local/bin:${PATH}"
+
 # Copy the application code into the container
 COPY ./src /app/src
 COPY ./scripts /app/scripts
+COPY ./alembic /app/alembic
+COPY ./alembic.ini /app/alembic.ini
+
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
+
+# Make scripts executable
+RUN chmod +x /app/scripts/*.sh
 
 # Expose port 8000 to allow communication to the Uvicorn server
 EXPOSE 8000
 
+# Add health check for database connectivity
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
 # Define the command to run the application
-# --host 0.0.0.0 makes the server accessible from outside the container
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# The init-db.sh script will handle database migrations and server startup
+CMD ["/app/scripts/init-db.sh"]

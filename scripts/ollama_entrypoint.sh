@@ -16,9 +16,13 @@ while ! curl -s -f http://localhost:11434/ > /dev/null; do
   sleep 1
 done
 
-# Pull the model
-echo "Ollama server started. Pulling llama3 model..."
-ollama pull llama3
+# Pull the model (using llama3.2:1b for faster download and lower memory usage)
+echo "Ollama server started. Pulling llama3.2:1b model..."
+ollama pull llama3.2:1b
+
+# Also pull the original llama3 model (this will take longer)
+echo "Also pulling llama3 model (this may take several minutes)..."
+ollama pull llama3 || echo "Failed to pull llama3, continuing with llama3.2:1b"
 
 # Wait for the background process to exit
 wait $pid

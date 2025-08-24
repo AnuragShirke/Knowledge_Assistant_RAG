@@ -14,5 +14,11 @@ passlib[bcrypt]
 python-jose[cryptography]
 pydantic-settings
 sqlalchemy
+alembic
 psycopg2-binary
+aiosqlite
 python-docx
+pytest
+pytest-asyncio
+httpx
+pytest-mock
