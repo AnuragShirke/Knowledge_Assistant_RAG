@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: ./rag-quest-hub
+      dockerfile: Dockerfile
+    volumes: []  # Remove development volume mounts for production
+    environment:
+      VITE_API_BASE_URL: http://backend:8000
+      VITE_API_TIMEOUT: "30000"
+      VITE_ENABLE_REGISTRATION: "${VITE_ENABLE_REGISTRATION:-true}"
+
+  backend:
+    volumes:
+      - db_data:/app/data  # SQLite database volume for production
+    environment:
+      - DATABASE_URL=sqlite:///./data/knowledge_assistant.db
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_LIFETIME_SECONDS=${JWT_LIFETIME_SECONDS:-3600}
+      - USER_REGISTRATION_ENABLED=${USER_REGISTRATION_ENABLED:-true}
+      - EMAIL_VERIFICATION_REQUIRED=${EMAIL_VERIFICATION_REQUIRED:-false}
+
+volumes:
+  db_data:
