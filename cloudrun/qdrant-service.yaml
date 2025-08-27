@@ -1,0 +1,61 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: knowledge-assistant-qdrant
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Resource limits for free tier
+        run.googleapis.com/memory: "512Mi"
+        run.googleapis.com/cpu: "1000m"
+        run.googleapis.com/max-instances: "5"
+        run.googleapis.com/min-instances: "1"
+        # Keep at least one instance warm for vector database
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 50
+      timeoutSeconds: 300
+      containers:
+      - name: qdrant
+        image: qdrant/qdrant:latest
+        ports:
+        - name: http1
+          containerPort: 6333
+        env:
+        - name: QDRANT__SERVICE__HTTP_PORT
+          value: "6333"
+        - name: QDRANT__SERVICE__GRPC_PORT
+          value: "6334"
+        - name: QDRANT__STORAGE__STORAGE_PATH
+          value: "/qdrant/storage"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: qdrant-storage
+          mountPath: /qdrant/storage
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 6333
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 6333
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: qdrant-storage
+        emptyDir: {}
+  traffic:
+  - percent: 100
+    latestRevision: true

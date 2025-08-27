@@ -11,11 +11,24 @@ export default defineConfig(({ mode }) => ({
     watch: {
       usePolling: true, // Enable polling for Docker environments
     },
-    proxy: {
+    proxy: mode !== 'production' ? {
       '/api': {
         target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    } : undefined,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: mode === 'development',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+        },
       },
     },
   },

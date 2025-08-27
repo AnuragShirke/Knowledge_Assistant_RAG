@@ -8,7 +8,7 @@ beautifulsoup4
 sentence-transformers
 qdrant-client
 langchain
-ollama
+google-generativeai
 fastapi-users[sqlalchemy]
 passlib[bcrypt]
 python-jose[cryptography]
@@ -22,3 +22,4 @@ pytest
 pytest-asyncio
 httpx
 pytest-mock
+psutil

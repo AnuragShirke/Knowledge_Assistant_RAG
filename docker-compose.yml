@@ -39,11 +39,9 @@ services:
       - db_data:/app/data  # SQLite database volume
     depends_on:
       - qdrant
-      - ollama
     environment:
       - QDRANT_HOST=qdrant
-      - OLLAMA_HOST=ollama
-      - OLLAMA_MODEL=llama3.2:1b
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://frontend:8080
       - DATABASE_URL=sqlite+aiosqlite:///./data/knowledge_assistant.db
       - JWT_SECRET=your-super-secret-jwt-key-for-development-only
@@ -64,20 +62,8 @@ services:
     networks:
       - app-network
 
-  ollama:
-    image: ollama/ollama:latest
-    entrypoint: ["/app/ollama_entrypoint.sh"]
-    ports:
-      - "11434:11434"
-    volumes:
-      - ./scripts:/app
-      - ollama_data:/root/.ollama
-    networks:
-      - app-network
-
 volumes:
   qdrant_data:
-  ollama_data:
   db_data:
 
 networks:
