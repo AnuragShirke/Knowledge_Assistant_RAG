@@ -1,0 +1,95 @@
+# Complete Cloud Run Configuration for Knowledge Assistant
+# This file contains all the necessary configurations for deploying to Google Cloud Run
+
+# Project Configuration
+PROJECT_ID: "your-gcp-project-id"
+REGION: "us-central1"
+SERVICES:
+  - name: "knowledge-assistant-frontend"
+    image: "gcr.io/PROJECT_ID/knowledge-assistant-frontend"
+    port: 8080
+    memory: "512Mi"
+    cpu: "1000m"
+    max_instances: 10
+    min_instances: 0
+    
+  - name: "knowledge-assistant-backend"
+    image: "gcr.io/PROJECT_ID/knowledge-assistant-backend"
+    port: 8000
+    memory: "1Gi"
+    cpu: "1000m"
+    max_instances: 10
+    min_instances: 0
+    service_account: "knowledge-assistant-backend-sa@PROJECT_ID.iam.gserviceaccount.com"
+    
+  - name: "knowledge-assistant-qdrant"
+    image: "qdrant/qdrant:latest"
+    port: 6333
+    memory: "512Mi"
+    cpu: "1000m"
+    max_instances: 5
+    min_instances: 1
+    service_account: "knowledge-assistant-qdrant-sa@PROJECT_ID.iam.gserviceaccount.com"
+
+# Environment Variables Configuration
+ENVIRONMENT_VARIABLES:
+  frontend:
+    VITE_API_BASE_URL: "https://knowledge-assistant-backend-HASH-uc.a.run.app"
+    VITE_API_TIMEOUT: "30000"
+    VITE_ENABLE_REGISTRATION: "true"
+    
+  backend:
+    QDRANT_HOST: "https://knowledge-assistant-qdrant-HASH-uc.a.run.app"
+    QDRANT_PORT: "443"
+    CORS_ORIGINS: "https://knowledge-assistant-frontend-HASH-uc.a.run.app"
+    JWT_LIFETIME_SECONDS: "3600"
+    USER_REGISTRATION_ENABLED: "true"
+    EMAIL_VERIFICATION_REQUIRED: "false"
+    PYTHONUNBUFFERED: "1"
+    PYTHONDONTWRITEBYTECODE: "1"
+    
+  qdrant:
+    QDRANT__SERVICE__HTTP_PORT: "6333"
+    QDRANT__SERVICE__GRPC_PORT: "6334"
+    QDRANT__STORAGE__STORAGE_PATH: "/qdrant/storage"
+
+# Secret Environment Variables (stored in Secret Manager)
+SECRET_VARIABLES:
+  backend:
+    - name: "DATABASE_URL"
+      secret: "knowledge-assistant-secrets"
+      key: "DATABASE_URL"
+    - name: "JWT_SECRET"
+      secret: "knowledge-assistant-secrets"
+      key: "JWT_SECRET"
+    - name: "GEMINI_API_KEY"
+      secret: "knowledge-assistant-secrets"
+      key: "GEMINI_API_KEY"
+
+# Cloud SQL Configuration
+CLOUD_SQL:
+  instance_name: "knowledge-assistant-db"
+  database_name: "knowledge-assistant-main-db"
+  user_name: "knowledge-assistant-user"
+  region: "us-central1"
+  tier: "db-f1-micro"
+  disk_size: 10
+  
+# IAM Configuration
+SERVICE_ACCOUNTS:
+  - name: "knowledge-assistant-backend-sa"
+    roles:
+      - "roles/cloudsql.client"
+      - "roles/secretmanager.secretAccessor"
+      - "roles/run.invoker"
+      
+  - name: "knowledge-assistant-qdrant-sa"
+    roles:
+      - "roles/run.invoker"
+
+# Resource Limits (Free Tier Optimized)
+RESOURCE_LIMITS:
+  total_memory: "2Gi"  # Total across all services
+  total_cpu: "3000m"   # Total across all services
+  max_requests_per_minute: 1000
+  max_concurrent_requests: 100

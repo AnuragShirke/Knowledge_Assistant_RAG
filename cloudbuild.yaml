@@ -1,0 +1,146 @@
+# Cloud Build Configuration for Knowledge Assistant
+# This file defines the build pipeline for all services
+
+steps:
+  # Build Backend Docker Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: 'Knowledge_Assistant_RAG'
+
+  # Build Frontend Docker Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-frontend'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: 'Knowledge_Assistant_RAG/rag-quest-hub'
+
+  # Push Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:$BUILD_ID'
+    waitFor: ['build-backend']
+
+  # Push Frontend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:$BUILD_ID'
+    waitFor: ['build-frontend']
+
+  # Push Latest Tags
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend-latest'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:latest'
+    waitFor: ['push-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend-latest'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:latest'
+    waitFor: ['push-frontend']
+
+  # Deploy Qdrant Service (using public image)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-qdrant'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'knowledge-assistant-qdrant'
+      - '--image=qdrant/qdrant:latest'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--max-instances=5'
+      - '--min-instances=1'
+      - '--port=6333'
+      - '--service-account=knowledge-assistant-qdrant-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--set-env-vars=QDRANT__SERVICE__HTTP_PORT=6333,QDRANT__SERVICE__GRPC_PORT=6334'
+      - '--allow-unauthenticated'
+    waitFor: ['-']
+
+  # Deploy Backend Service
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-backend'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'knowledge-assistant-backend'
+      - '--image=gcr.io/$PROJECT_ID/knowledge-assistant-backend:$BUILD_ID'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--max-instances=10'
+      - '--min-instances=0'
+      - '--port=8000'
+      - '--service-account=knowledge-assistant-backend-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--add-cloudsql-instances=$PROJECT_ID:us-central1:knowledge-assistant-db'
+      - '--update-secrets=DATABASE_URL=knowledge-assistant-secrets:DATABASE_URL:latest'
+      - '--update-secrets=JWT_SECRET=knowledge-assistant-secrets:JWT_SECRET:latest'
+      - '--update-secrets=GEMINI_API_KEY=knowledge-assistant-secrets:GEMINI_API_KEY:latest'
+      - '--set-env-vars=QDRANT_HOST=https://knowledge-assistant-qdrant-${_QDRANT_HASH}-uc.a.run.app,QDRANT_PORT=443,PYTHONUNBUFFERED=1,PYTHONDONTWRITEBYTECODE=1'
+      - '--allow-unauthenticated'
+    waitFor: ['push-backend-latest', 'deploy-qdrant']
+
+  # Deploy Frontend Service
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-frontend'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'knowledge-assistant-frontend'
+      - '--image=gcr.io/$PROJECT_ID/knowledge-assistant-frontend:$BUILD_ID'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--max-instances=10'
+      - '--min-instances=0'
+      - '--port=8080'
+      - '--set-env-vars=VITE_API_BASE_URL=https://knowledge-assistant-backend-${_BACKEND_HASH}-uc.a.run.app'
+      - '--allow-unauthenticated'
+    waitFor: ['push-frontend-latest', 'deploy-backend']
+
+# Build configuration
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+
+# Substitutions for dynamic values
+substitutions:
+  _BACKEND_HASH: 'auto-generated-hash'
+  _QDRANT_HASH: 'auto-generated-hash'
+
+# Build timeout
+timeout: '1800s'  # 30 minutes
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/knowledge-assistant-backend:latest'
+  - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/knowledge-assistant-frontend:latest'

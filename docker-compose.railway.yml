@@ -1,32 +1,13 @@
-services:
-  frontend:
-    build:
-      context: ./rag-quest-hub
-      dockerfile: Dockerfile
-    ports:
-      - "3000:8080"
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
-      - VITE_API_TIMEOUT=${VITE_API_TIMEOUT:-30000}
-      - VITE_ENABLE_REGISTRATION=${VITE_ENABLE_REGISTRATION:-true}
-    restart: unless-stopped
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+version: '3.8'
 
+services:
+  # Backend service - Main application
   backend:
     build: 
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     volumes:
       - db_data:/app/data
     depends_on:
@@ -36,17 +17,18 @@ services:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      - DATABASE_URL=sqlite+aiosqlite:///./data/knowledge_assistant.db
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/knowledge_assistant.db}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_LIFETIME_SECONDS=${JWT_LIFETIME_SECONDS:-3600}
       - USER_REGISTRATION_ENABLED=${USER_REGISTRATION_ENABLED:-true}
       - EMAIL_VERIFICATION_REQUIRED=${EMAIL_VERIFICATION_REQUIRED:-false}
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
+      - PORT=${PORT:-8000}
     restart: unless-stopped
     networks:
-      - app-network
+      - railway-network
     entrypoint: ["/app/scripts/wait-for-qdrant.sh", "qdrant:6333", "/app/scripts/init-db.sh"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -55,6 +37,30 @@ services:
       retries: 3
       start_period: 60s
 
+  # Frontend service
+  frontend:
+    build:
+      context: ./rag-quest-hub
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - VITE_API_TIMEOUT=${VITE_API_TIMEOUT:-30000}
+      - VITE_ENABLE_REGISTRATION=${VITE_ENABLE_REGISTRATION:-true}
+    restart: unless-stopped
+    networks:
+      - railway-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Vector database service
   qdrant:
     image: qdrant/qdrant:latest
     ports:
@@ -67,13 +73,19 @@ services:
       - QDRANT__SERVICE__GRPC_PORT=6334
     restart: unless-stopped
     networks:
-      - app-network
+      - railway-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:6333/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
 volumes:
   qdrant_data:
@@ -82,8 +94,5 @@ volumes:
     driver: local
 
 networks:
-  app-network:
+  railway-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

@@ -18,7 +18,7 @@ from .core.vector_store import (
     ensure_user_collection_exists,
     get_user_collection_name
 )
-from .core.llm import get_ollama_client, format_prompt, generate_response
+from .core.gemini_llm import get_gemini_client, format_prompt, generate_response
 from .core.models import QueryRequest, QueryResponse, ErrorResponse, UploadResponse
 from .core.exceptions import (
     KnowledgeAssistantException,
@@ -189,7 +189,6 @@ async def general_exception_handler(request: Request, exc: Exception):
 # --- Constants ---
 UPLOADS_DIR = "uploads"
 QDRANT_COLLECTION_NAME = "knowledge_base"
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")  # Use smaller model by default
 
 # --- Application Startup ---
 # Create uploads directory if it doesn't exist
@@ -217,11 +216,11 @@ except Exception as e:
     raise ServiceUnavailableError("qdrant", f"Cannot connect to Qdrant: {str(e)}")
 
 try:
-    ollama_client = get_ollama_client()
-    logger.info("Ollama client initialized successfully")
+    gemini_client = get_gemini_client()
+    logger.info("Gemini client initialized successfully")
 except Exception as e:
-    logger.error(f"Failed to initialize Ollama client: {str(e)}")
-    raise ServiceUnavailableError("ollama", f"Cannot connect to Ollama: {str(e)}")
+    logger.error(f"Failed to initialize Gemini client: {str(e)}")
+    raise ServiceUnavailableError("gemini", f"Cannot connect to Gemini: {str(e)}")
 
 # Get the size of the embeddings from the model
 try:
@@ -491,7 +490,7 @@ async def query_knowledge_base(
 
         # 6. Generate a response from the LLM
         try:
-            answer = generate_response(ollama_client, OLLAMA_MODEL, prompt)
+            answer = generate_response(gemini_client, prompt)
             if not answer or not answer.strip():
                 raise LLMError("LLM returned empty response")
         except Exception as e:
@@ -531,74 +530,110 @@ async def query_knowledge_base(
 
 @app.get("/health")
 async def health_check(session: AsyncSession = Depends(get_async_session)):
-    """Health check endpoint with service status monitoring."""
-    health_status = {
+    """Comprehensive health check endpoint with detailed service monitoring."""
+    from .core.monitoring import get_health_status
+    return await get_health_status(session)
+
+@app.get("/health/simple")
+async def simple_health_check():
+    """Simple health check endpoint for basic monitoring."""
+    return {
         "status": "ok",
         "timestamp": datetime.utcnow().isoformat(),
-        "services": {}
+        "service": "knowledge-assistant-api"
     }
+
+@app.get("/health/dashboard")
+async def health_dashboard():
+    """Service status dashboard endpoint."""
+    from .core.monitoring import get_service_dashboard
+    return get_service_dashboard()
+
+@app.get("/health/metrics")
+async def system_metrics():
+    """System resource metrics endpoint."""
+    from .core.monitoring import health_monitor
+    metrics = health_monitor.get_system_metrics()
+    return metrics.to_dict()
+
+@app.post("/admin/backup")
+async def create_backup_endpoint(user: User = Depends(current_active_user)):
+    """Create a full backup of the system (admin only)."""
+    # Note: In production, you might want to add admin role checking
+    from .core.backup import create_backup
     
-    # Check database connection
     try:
-        from sqlalchemy import text
-        result = await session.execute(text("SELECT 1"))
-        result.fetchone()
-        health_status["services"]["database"] = {
-            "status": "healthy",
-            "type": "sqlite"
+        backup_metadata = await create_backup()
+        return {
+            "success": True,
+            "backup_id": backup_metadata.backup_id,
+            "timestamp": backup_metadata.timestamp.isoformat(),
+            "file_size_bytes": backup_metadata.file_size_bytes,
+            "database_records": backup_metadata.database_records,
+            "vector_collections": backup_metadata.vector_collections,
+            "status": backup_metadata.status
         }
     except Exception as e:
-        logger.error(f"Database health check failed: {str(e)}")
-        health_status["services"]["database"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
-        health_status["status"] = "degraded"
+        logger.error(f"Backup creation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Backup creation failed: {str(e)}")
+
+@app.get("/admin/backups")
+async def list_backups_endpoint(user: User = Depends(current_active_user)):
+    """List all available backups (admin only)."""
+    from .core.backup import list_available_backups
     
-    # Check Qdrant connection
     try:
-        collections = qdrant_client.get_collections()
-        health_status["services"]["qdrant"] = {
-            "status": "healthy",
-            "collections_count": len(collections.collections)
+        backups = await list_available_backups()
+        return {
+            "backups": [
+                {
+                    "backup_id": backup.backup_id,
+                    "timestamp": backup.timestamp.isoformat(),
+                    "backup_type": backup.backup_type,
+                    "file_size_bytes": backup.file_size_bytes,
+                    "database_records": backup.database_records,
+                    "vector_collections": backup.vector_collections,
+                    "status": backup.status,
+                    "error_message": backup.error_message
+                }
+                for backup in backups
+            ]
         }
     except Exception as e:
-        logger.error(f"Qdrant health check failed: {str(e)}")
-        health_status["services"]["qdrant"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
-        health_status["status"] = "degraded"
+        logger.error(f"Failed to list backups: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list backups: {str(e)}")
+
+@app.post("/admin/backup/{backup_id}/restore")
+async def restore_backup_endpoint(backup_id: str, user: User = Depends(current_active_user)):
+    """Restore from a specific backup (admin only)."""
+    from .core.backup import restore_backup
     
-    # Check Ollama connection
     try:
-        # Simple test to see if Ollama is responsive
-        test_response = ollama_client.generate(model=OLLAMA_MODEL, prompt="test", stream=False)
-        health_status["services"]["ollama"] = {
-            "status": "healthy",
-            "model": OLLAMA_MODEL
+        success = await restore_backup(backup_id)
+        if success:
+            return {
+                "success": True,
+                "message": f"Successfully restored from backup: {backup_id}",
+                "backup_id": backup_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail=f"Restore failed for backup: {backup_id}")
+    except Exception as e:
+        logger.error(f"Restore failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+
+@app.get("/admin/backup/{backup_id}/verify")
+async def verify_backup_endpoint(backup_id: str, user: User = Depends(current_active_user)):
+    """Verify backup integrity (admin only)."""
+    from .core.backup import verify_backup
+    
+    try:
+        is_valid = await verify_backup(backup_id)
+        return {
+            "backup_id": backup_id,
+            "is_valid": is_valid,
+            "message": "Backup integrity verified" if is_valid else "Backup integrity check failed"
         }
     except Exception as e:
-        logger.error(f"Ollama health check failed: {str(e)}")
-        health_status["services"]["ollama"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
-        health_status["status"] = "degraded"
-    
-    # Check embedding model
-    try:
-        test_embedding = embedding_model.encode("test")
-        health_status["services"]["embedding_model"] = {
-            "status": "healthy",
-            "embedding_dimension": len(test_embedding)
-        }
-    except Exception as e:
-        logger.error(f"Embedding model health check failed: {str(e)}")
-        health_status["services"]["embedding_model"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
-        health_status["status"] = "degraded"
-    
-    return health_status
+        logger.error(f"Backup verification failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Backup verification failed: {str(e)}")
