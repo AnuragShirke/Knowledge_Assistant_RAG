@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Send, Bot, User, Loader2, FileText, ExternalLink, RefreshCw, AlertTriangle, WifiOff } from 'lucide-react';
 import { queryAPI, QueryResponse } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeError, createRetryFunction, showErrorToast, ConnectionMonitor } from '@/lib/errorHandling';
+import { analyzeError, createRetryFunction, showErrorToast, SimpleHealthChecker } from '@/lib/errorHandling';
 
 interface Message {
   id: string;
@@ -54,8 +54,10 @@ const ChatInterface: React.FC = () => {
     setMessages([welcomeMessage]);
 
     // Set up connection monitoring
-    const monitor = ConnectionMonitor.getInstance();
-    const unsubscribe = monitor.addListener(setIsOnline);
+    const monitor = SimpleHealthChecker.getInstance();
+    const unsubscribe = monitor.addListener((status) => {
+      setIsOnline(status === 'online');
+    });
 
     return unsubscribe;
   }, []);

@@ -17,7 +17,9 @@ class SourceDocument(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    source_documents: List[SourceDocument]
+    sources: List[Dict[str, Any]]
+    query: str
+    timestamp: str
 
 class ErrorResponse(BaseModel):
     error: str

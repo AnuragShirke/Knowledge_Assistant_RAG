@@ -22,3 +22,141 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+# ===========================================
+# FRONTEND SECURITY & DEPLOYMENT
+# ===========================================
+
+# Environment files with API keys (CRITICAL)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.vercel
+.env.vercel.local
+.env.*
+!.env.example
+
+# Vercel deployment files
+.vercel/
+.vercel
+
+# Build artifacts
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# ===========================================
+# DEVELOPMENT & TESTING
+# ===========================================
+
+# Test coverage
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+test-results/
+
+# Storybook
+.storybook-out/
+storybook-static/
+
+# ===========================================
+# CACHE & TEMPORARY FILES
+# ===========================================
+
+# Vite cache
+.vite/
+vite.config.js.timestamp-*
+
+# TypeScript cache
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Prettier cache
+.prettiercache
+
+# Parcel cache
+.parcel-cache/
+
+# ===========================================
+# PACKAGE MANAGERS
+# ===========================================
+
+# npm
+node_modules/
+npm-debug.log*
+.npm/
+
+# Yarn
+yarn-debug.log*
+yarn-error.log*
+.yarn/
+.pnp.*
+
+# pnpm
+pnpm-debug.log*
+.pnpm-store/
+
+# ===========================================
+# SYSTEM FILES
+# ===========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ===========================================
+# IDE & EDITOR
+# ===========================================
+
+# VSCode
+.vscode/settings.json
+.vscode/launch.json
+!.vscode/extensions.json
+
+# WebStorm/IntelliJ
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+
+# ===========================================
+# RUNTIME & LOGS
+# ===========================================
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs/
+*.log
+
+# ===========================================
+# SECURITY
+# ===========================================
+
+# API keys and secrets (if accidentally created)
+*api_key*
+*secret*
+*token*
+*.key

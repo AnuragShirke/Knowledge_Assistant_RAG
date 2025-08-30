@@ -13,7 +13,7 @@ def get_gemini_client():
         raise ValueError("GEMINI_API_KEY environment variable is required")
     
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     return model
 
 # --- Prompt Generation ---
@@ -46,3 +46,30 @@ def generate_response(client, prompt: str):
     except Exception as e:
         logger.error(f"Gemini API error: {str(e)}")
         raise Exception(f"Failed to generate response: {str(e)}")
+
+# --- Embedding Functions ---
+
+def get_embeddings(texts: list[str]) -> list[list[float]]:
+    """Generate embeddings for a list of texts using Gemini."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is required")
+    
+    genai.configure(api_key=api_key)
+    
+    embeddings = []
+    for text in texts:
+        try:
+            # Use Gemini's embedding model
+            result = genai.embed_content(
+                model="models/embedding-001",
+                content=text,
+                task_type="retrieval_document"
+            )
+            embeddings.append(result['embedding'])
+        except Exception as e:
+            logger.error(f"Failed to generate embedding for text: {str(e)}")
+            # Return a zero vector as fallback
+            embeddings.append([0.0] * 768)  # Gemini embeddings are 768-dimensional
+    
+    return embeddings

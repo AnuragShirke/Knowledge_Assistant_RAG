@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Database initialization script for Knowledge Assistant RAG
-# This script runs database migrations and starts the FastAPI server
-
+# Railway-specific database initialization script
 set -e
 
-echo "Starting database initialization..."
+echo "Starting Railway database initialization..."
 
 # Create data directory if it doesn't exist
 mkdir -p /app/data
@@ -61,7 +59,15 @@ else
     fi
 fi
 
-# Start the FastAPI server
-echo "Starting FastAPI server..."
+# Create test user for demo purposes
+echo "Creating test user..."
+if python create-test-user.py; then
+    echo "Test user setup completed."
+else
+    echo "Test user setup failed, but continuing..."
+fi
+
+# Start the FastAPI server using Railway-specific main
+echo "Starting FastAPI server with Railway configuration..."
 PORT=${PORT:-8000}
-exec uvicorn src.main:app --host 0.0.0.0 --port $PORT --log-level info
+exec uvicorn src.main_railway:app --host 0.0.0.0 --port $PORT --log-level info

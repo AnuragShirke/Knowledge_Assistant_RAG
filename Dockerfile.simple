@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install basic dependencies
+RUN pip install fastapi uvicorn
+
+# Copy the simple main file
+COPY main-simple.py /app/main.py
+
+# Expose port (Railway uses PORT env var)
+EXPOSE $PORT
+
+# Run the application with dynamic port
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}

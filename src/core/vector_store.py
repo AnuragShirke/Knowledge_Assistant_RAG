@@ -9,10 +9,38 @@ logger = logging.getLogger(__name__)
 
 def get_qdrant_client():
     """Initializes and returns the Qdrant client."""
-    # Get Qdrant host from environment variable, default to localhost if not set
-    host = os.environ.get("QDRANT_HOST", "localhost")
-    client = QdrantClient(host=host, port=6333)
-    return client
+    # Check if we're in Railway environment or if QDRANT_HOST is not available
+    qdrant_host = os.environ.get("QDRANT_HOST")
+    
+    if qdrant_host and qdrant_host != "localhost":
+        # Use external Qdrant server
+        try:
+            client = QdrantClient(host=qdrant_host, port=6333)
+            logger.info(f"Connected to Qdrant server at {qdrant_host}")
+            return client
+        except Exception as e:
+            logger.warning(f"Failed to connect to Qdrant server at {qdrant_host}: {str(e)}")
+            logger.info("Falling back to in-memory Qdrant client")
+    
+    # Use file-based Qdrant client for Railway to persist data
+    try:
+        # Create data directory if it doesn't exist
+        data_dir = "/app/data/qdrant"
+        os.makedirs(data_dir, exist_ok=True)
+        
+        client = QdrantClient(path=data_dir)
+        logger.info(f"Using file-based Qdrant client at {data_dir}")
+        return client
+    except Exception as e:
+        logger.warning(f"Failed to create file-based Qdrant client: {str(e)}")
+        # Fallback to in-memory if file-based fails
+        try:
+            client = QdrantClient(":memory:")
+            logger.info("Using in-memory Qdrant client as fallback")
+            return client
+        except Exception as fallback_error:
+            logger.error(f"Failed to create any Qdrant client: {str(fallback_error)}")
+            raise
 
 # --- Collection Management ---
 
@@ -21,12 +49,18 @@ def create_collection_if_not_exists(client: QdrantClient, collection_name: str, 
     try:
         client.get_collection(collection_name=collection_name)
         logger.info(f"Collection '{collection_name}' already exists")
-    except Exception: # If the collection does not exist, this will raise an exception
-        client.create_collection(
-            collection_name=collection_name,
-            vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE),
-        )
-        logger.info(f"Created new collection '{collection_name}'")
+    except Exception as e:
+        # If the collection does not exist, this will raise an exception
+        logger.info(f"Collection '{collection_name}' does not exist, creating it...")
+        try:
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE),
+            )
+            logger.info(f"Created new collection '{collection_name}'")
+        except Exception as create_error:
+            logger.error(f"Failed to create collection '{collection_name}': {str(create_error)}")
+            raise
 
 # --- User-Specific Collection Management ---
 
@@ -56,25 +90,33 @@ def ensure_user_collection_exists(client: QdrantClient, user_id: uuid.UUID, vect
     Returns:
         The collection name that was created or verified
     """
-    collection_name = get_user_collection_name(user_id)
-    
     try:
-        # Check if collection exists
-        client.get_collection(collection_name=collection_name)
-        logger.info(f"User collection '{collection_name}' already exists for user {user_id}")
-    except Exception:
-        # Collection doesn't exist, create it
+        collection_name = get_user_collection_name(user_id)
+        logger.info(f"Ensuring collection exists for user {user_id}: {collection_name}")
+        
         try:
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE),
-            )
-            logger.info(f"Created new user collection '{collection_name}' for user {user_id}")
-        except Exception as e:
-            logger.error(f"Failed to create collection '{collection_name}' for user {user_id}: {str(e)}")
-            raise
-    
-    return collection_name
+            # Check if collection exists
+            client.get_collection(collection_name=collection_name)
+            logger.info(f"User collection '{collection_name}' already exists for user {user_id}")
+        except Exception as get_error:
+            # Collection doesn't exist, create it
+            logger.info(f"Collection '{collection_name}' does not exist, creating it for user {user_id}")
+            try:
+                client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE),
+                )
+                logger.info(f"Created new user collection '{collection_name}' for user {user_id}")
+            except Exception as create_error:
+                logger.error(f"Failed to create collection '{collection_name}' for user {user_id}: {str(create_error)}")
+                raise create_error
+        
+        return collection_name
+        
+    except Exception as e:
+        logger.error(f"Error in ensure_user_collection_exists: {str(e)}")
+        logger.error(f"Function called with client={type(client)}, user_id={user_id}, vector_size={vector_size}")
+        raise
 
 def collection_exists(client: QdrantClient, collection_name: str) -> bool:
     """
