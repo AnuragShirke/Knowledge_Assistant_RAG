@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
 import ChatInterface from '@/components/ChatInterface';
-import ConnectionStatus from '@/components/ConnectionStatus';
+import { SimpleConnectionStatus } from '@/components/SimpleConnectionStatus';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
@@ -29,11 +29,7 @@ const Dashboard: React.FC = () => {
       <Header />
       
       {/* Fixed Corner Status Indicator */}
-      <ConnectionStatus 
-        className="fixed top-20 right-4 z-50 max-w-xs" 
-        showWhenOnline={true}
-        showServiceDetails={false}
-      />
+      <SimpleConnectionStatus />
       
       <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">

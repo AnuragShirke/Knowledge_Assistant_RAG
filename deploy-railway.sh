@@ -111,7 +111,12 @@ setup_railway_project() {
     case $choice in
         1)
             log "Creating new Railway project..."
-            railway new "$PROJECT_NAME"
+            if railway init --help | grep -q -- '--name'; then
+            railway init --name "$PROJECT_NAME"
+            else
+            railway init "$PROJECT_NAME"
+            fi
+
             ;;
         2)
             log "Connecting to existing Railway project..."
@@ -130,16 +135,15 @@ setup_railway_project() {
 deploy_backend() {
     log "Deploying backend service..."
     
-    # Check if backend service exists
-    if ! railway service list | grep -q "$BACKEND_SERVICE"; then
-        log "Creating backend service..."
-        railway service create "$BACKEND_SERVICE"
-    fi
+    # Railway automatically creates services when you deploy
+    # No need to explicitly create services anymore
+    log "Deploying backend service..."
     
-    # Switch to backend service
-    railway service use "$BACKEND_SERVICE"
+    # Deploy backend first
+    log "Deploying backend code..."
+    railway up --detach
     
-    # Set environment variables
+    # Set environment variables after deployment
     log "Setting backend environment variables..."
     source .env.railway
     
@@ -157,22 +161,17 @@ deploy_backend() {
         railway variables set QDRANT_CLOUD_URL="$QDRANT_CLOUD_URL"
         railway variables set QDRANT_API_KEY="$QDRANT_API_KEY"
     else
-        railway variables set QDRANT_HOST="$QDRANT_HOST"
-        railway variables set QDRANT_PORT="$QDRANT_PORT"
+        railway variables set QDRANT_HOST="qdrant"
+        railway variables set QDRANT_PORT="6333"
     fi
     
-    if [ -n "$OPENAI_API_KEY" ]; then
+    if [ -n "$GEMINI_API_KEY" ]; then
+        railway variables set GEMINI_API_KEY="$GEMINI_API_KEY"
+        railway variables set USE_GEMINI_API="true"
+    elif [ -n "$OPENAI_API_KEY" ]; then
         railway variables set OPENAI_API_KEY="$OPENAI_API_KEY"
         railway variables set USE_OPENAI_INSTEAD_OF_OLLAMA="$USE_OPENAI_INSTEAD_OF_OLLAMA"
-    else
-        railway variables set OLLAMA_HOST="$OLLAMA_HOST"
-        railway variables set OLLAMA_PORT="$OLLAMA_PORT"
-        railway variables set OLLAMA_MODEL="$OLLAMA_MODEL"
     fi
-    
-    # Deploy backend
-    log "Deploying backend code..."
-    railway up --detach
     
     success "Backend deployment initiated"
 }
@@ -181,38 +180,25 @@ deploy_backend() {
 deploy_frontend() {
     log "Deploying frontend service..."
     
-    # Get backend URL
-    railway service use "$BACKEND_SERVICE"
-    BACKEND_URL=$(railway domain | head -n1)
-    
-    if [ -z "$BACKEND_URL" ]; then
-        warning "Backend URL not available yet. You may need to set VITE_API_BASE_URL manually later."
-        BACKEND_URL="https://your-backend.railway.app"
-    else
-        BACKEND_URL="https://$BACKEND_URL"
-    fi
+    # Get backend URL from Railway dashboard or use placeholder
+    BACKEND_URL="https://your-backend.railway.app"
+    warning "You'll need to update VITE_API_BASE_URL with the actual backend URL after deployment"
     
     # Switch to frontend directory
     cd rag-quest-hub
     
-    # Check if frontend service exists
-    if ! railway service list | grep -q "$FRONTEND_SERVICE"; then
-        log "Creating frontend service..."
-        railway service create "$FRONTEND_SERVICE"
-    fi
-    
-    # Switch to frontend service
-    railway service use "$FRONTEND_SERVICE"
-    
-    # Set frontend environment variables
-    log "Setting frontend environment variables..."
-    railway variables set VITE_API_BASE_URL="$BACKEND_URL"
-    railway variables set VITE_API_TIMEOUT="$VITE_API_TIMEOUT"
-    railway variables set VITE_ENABLE_REGISTRATION="$VITE_ENABLE_REGISTRATION"
+    # Railway will automatically create the service when deploying
+    log "Deploying frontend service..."
     
     # Deploy frontend
     log "Deploying frontend code..."
     railway up --detach
+    
+    # Set frontend environment variables after deployment
+    log "Setting frontend environment variables..."
+    railway variables set VITE_API_BASE_URL="$BACKEND_URL"
+    railway variables set VITE_API_TIMEOUT="30000"
+    railway variables set VITE_ENABLE_REGISTRATION="true"
     
     # Return to project root
     cd ..

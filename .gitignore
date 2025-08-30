@@ -283,3 +283,217 @@ test-reports/
 
 # Docker build context files that shouldn't be included
 .dockerignore
+# =
+==========================================
+# DEPLOYMENT & SECURITY - CRITICAL ADDITIONS
+# ===========================================
+
+# Railway Environment Files (CRITICAL - Contains API keys and secrets)
+.env.railway
+.env.railway.local
+railway-*.env
+
+# Vercel Environment Files (CRITICAL - Contains API keys)
+.env.vercel
+.env.vercel.local
+.vercel/
+
+# All environment files with secrets (CRITICAL)
+.env.*
+!.env.example
+!.env.*.template
+
+# API Keys and Secrets (CRITICAL)
+*api_key*
+*secret*
+*token*
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Database URLs and Connection Strings (CRITICAL)
+*DATABASE_URL*
+*DB_URL*
+
+# JWT Secrets (CRITICAL)
+*JWT_SECRET*
+*jwt_secret*
+
+# ===========================================
+# DEPLOYMENT ARTIFACTS
+# ===========================================
+
+# Railway deployment artifacts
+.railway/
+railway.json.local
+railway-*.log
+
+# Vercel deployment artifacts
+.vercel/
+vercel.json.local
+
+# Build artifacts
+dist/
+build/
+.next/
+.nuxt/
+out/
+
+# ===========================================
+# DEVELOPMENT & TESTING
+# ===========================================
+
+# Local development databases
+*.db
+*.sqlite*
+knowledge_assistant*.db
+test*.db
+
+# Test coverage and reports
+coverage/
+.coverage
+htmlcov/
+test-results/
+.pytest_cache/
+
+# Local configuration overrides
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ===========================================
+# SENSITIVE DATA & UPLOADS
+# ===========================================
+
+# User uploaded documents (if stored locally)
+uploads/
+documents/
+user_documents/
+
+# Vector store data
+vector_store/
+qdrant_storage/
+embeddings/
+
+# Backup files with potential sensitive data
+backups/
+*.backup
+*.dump
+*.sql
+
+# ===========================================
+# SYSTEM & CACHE FILES
+# ===========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.nfs*
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# ===========================================
+# IDE & EDITOR SPECIFIC
+# ===========================================
+
+# VSCode
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+!.vscode/settings.json.example
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ===========================================
+# LOGS & MONITORING
+# ===========================================
+
+# Application logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# System logs
+/var/log/
+syslog
+
+# ===========================================
+# PACKAGE MANAGERS & DEPENDENCIES
+# ===========================================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ===========================================
+# DOCKER & CONTAINERS
+# ===========================================
+
+# Docker volumes and persistent data
+docker-data/
+postgres-data/
+qdrant-data/
+ollama-data/
+redis-data/
+
+# Docker override files
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.prod.yml
+
+# ===========================================
+# SECURITY SCANNING & COMPLIANCE
+# ===========================================
+
+# Security scan results
+security-scan-results/
+vulnerability-reports/
+.snyk
+
+# Compliance reports
+compliance-reports/
+audit-logs/
