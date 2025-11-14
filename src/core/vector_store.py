@@ -8,39 +8,43 @@ logger = logging.getLogger(__name__)
 # --- Qdrant Client Initialization ---
 
 def get_qdrant_client():
-    """Initializes and returns the Qdrant client."""
-    # Check if we're in Railway environment or if QDRANT_HOST is not available
-    qdrant_host = os.environ.get("QDRANT_HOST")
-    
-    if qdrant_host and qdrant_host != "localhost":
-        # Use external Qdrant server
+    """Initializes and returns the Qdrant client, prioritizing Cloud over local."""
+    qdrant_url = os.environ.get("QDRANT_URL")
+    qdrant_api_key = os.environ.get("QDRANT_API_KEY")
+
+    # Priority 1: Qdrant Cloud (production)
+    if qdrant_url and qdrant_api_key:
         try:
-            client = QdrantClient(host=qdrant_host, port=6333)
-            logger.info(f"Connected to Qdrant server at {qdrant_host}")
+            client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
+            logger.info(f"Connected to Qdrant Cloud at {qdrant_url}")
             return client
         except Exception as e:
-            logger.warning(f"Failed to connect to Qdrant server at {qdrant_host}: {str(e)}")
-            logger.info("Falling back to in-memory Qdrant client")
-    
-    # Use file-based Qdrant client for Railway to persist data
+            logger.error(f"Failed to connect to Qdrant Cloud with provided credentials: {e}")
+            raise  # If cloud credentials are provided, failure should be fatal.
+
+    # Priority 2: Local Docker container
+    qdrant_host = os.environ.get("QDRANT_HOST")
+    if qdrant_host and qdrant_host != "localhost":
+        try:
+            client = QdrantClient(host=qdrant_host, port=6333)
+            logger.info(f"Connected to local Qdrant server at {qdrant_host}")
+            return client
+        except Exception as e:
+            logger.warning(f"Failed to connect to local Qdrant server at {qdrant_host}: {e}")
+
+    # Priority 3: Local file-based storage (fallback for development)
     try:
-        # Create data directory if it doesn't exist
         data_dir = "/app/data/qdrant"
         os.makedirs(data_dir, exist_ok=True)
-        
         client = QdrantClient(path=data_dir)
         logger.info(f"Using file-based Qdrant client at {data_dir}")
         return client
     except Exception as e:
-        logger.warning(f"Failed to create file-based Qdrant client: {str(e)}")
-        # Fallback to in-memory if file-based fails
-        try:
-            client = QdrantClient(":memory:")
-            logger.info("Using in-memory Qdrant client as fallback")
-            return client
-        except Exception as fallback_error:
-            logger.error(f"Failed to create any Qdrant client: {str(fallback_error)}")
-            raise
+        logger.warning(f"Failed to create file-based Qdrant client: {e}")
+        # Final fallback: in-memory
+        client = QdrantClient(":memory:")
+        logger.info("Using in-memory Qdrant client as final fallback")
+        return client
 
 # --- Collection Management ---
 
