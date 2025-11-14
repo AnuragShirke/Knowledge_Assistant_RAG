@@ -15,7 +15,7 @@ python-jose[cryptography]
 pydantic-settings
 sqlalchemy
 alembic
-psycopg2-binary
+asyncpg
 aiosqlite
 python-docx
 pytest
