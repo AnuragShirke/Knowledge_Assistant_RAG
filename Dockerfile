@@ -53,8 +53,8 @@ COPY --chown=appuser:appgroup ./alembic.ini /app/alembic.ini
 # Grant ownership of home directory to appuser
 RUN chown -R appuser:appgroup /home/appuser
 
-# Create data directory and set permissions
-RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
+# Create data and uploads directories and set permissions
+RUN mkdir -p /app/data /app/uploads && chown -R appuser:appgroup /app/data /app/uploads
 
 # Make scripts executable
 RUN chmod +x /app/scripts/*.sh
