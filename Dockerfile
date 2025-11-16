@@ -53,8 +53,8 @@ COPY --chown=appuser:appgroup ./alembic.ini /app/alembic.ini
 # Grant ownership of home directory to appuser
 RUN chown -R appuser:appgroup /home/appuser
 
-# Create data and uploads directories and set permissions
-RUN mkdir -p /app/data /app/uploads && chown -R appuser:appgroup /app/data /app/uploads
+# Create data, uploads, and cache directories and set permissions
+RUN mkdir -p /app/data /app/uploads /home/appuser/.cache && chown -R appuser:appgroup /app/data /app/uploads /home/appuser/.cache
 
 # Make scripts executable
 RUN chmod +x /app/scripts/*.sh
@@ -62,10 +62,10 @@ RUN chmod +x /app/scripts/*.sh
 # Switch to non-root user
 USER appuser
 
-# Ensure user's local bin is in PATH, set PYTHONPATH, and configure a writable cache for transformers
+# Ensure user's local bin is in PATH, set PYTHONPATH, and configure the Hugging Face cache home
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 ENV PYTHONPATH="/home/appuser/.local/lib/python3.11/site-packages"
-ENV TRANSFORMERS_CACHE="/home/appuser/.cache"
+ENV HF_HOME="/home/appuser/.cache"
 
 # Expose port 8000
 EXPOSE 8000
