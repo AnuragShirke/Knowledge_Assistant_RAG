@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 pydantic
-PyMuPDF @ https://files.pythonhosted.org/packages/b5/f2/1335a5897823a3d134826b43e8a482a0e5b9622c5e339b4e13f6b3b4f67c/PyMuPDF-1.24.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl#sha256=8d309c368f644396c44c14586f7525c39c5c343d29b33cd41455c889395c4c59
+PyMuPDF
 pdfminer.six
 beautifulsoup4
 sentence-transformers
