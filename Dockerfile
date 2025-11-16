@@ -36,8 +36,8 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN addgroup -S appgroup --gid 1001 && \
-    adduser -S appuser --uid 1001 --ingroup appgroup
+RUN addgroup --system appgroup --gid 1001 && \
+    adduser --system appuser --uid 1001 --ingroup appgroup
 
 WORKDIR /app
 
