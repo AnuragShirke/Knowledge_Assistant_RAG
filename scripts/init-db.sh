@@ -30,21 +30,8 @@ echo "Database URL: $DATABASE_URL"
 echo "Running database migrations..."
 cd /app
 
-# Check if alembic command is available
-if ! command -v alembic &> /dev/null; then
-    echo "Alembic command not found in PATH. Trying python -m alembic instead..."
-    # Test if alembic module is available
-    if python -c "import alembic" 2>/dev/null; then
-        echo "Alembic module found, using python -m alembic"
-        ALEMBIC_CMD="python -m alembic"
-    else
-        echo "Alembic module not found. Trying to install..."
-        pip install alembic
-        ALEMBIC_CMD="python -m alembic"
-    fi
-else
-    ALEMBIC_CMD="alembic"
-fi
+# Always use python -m alembic for robustness
+ALEMBIC_CMD="python -m alembic"
 
 # Check if alembic.ini exists
 if [ ! -f "alembic.ini" ]; then
@@ -64,4 +51,4 @@ fi
 # Start the FastAPI server
 echo "Starting FastAPI server..."
 PORT=${PORT:-8000}
-exec uvicorn src.main:app --host 0.0.0.0 --port $PORT --log-level info
+exec python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT --log-level info
