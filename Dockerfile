@@ -62,9 +62,10 @@ RUN chmod +x /app/scripts/*.sh
 # Switch to non-root user
 USER appuser
 
-# Ensure user's local bin is in PATH and set PYTHONPATH
+# Ensure user's local bin is in PATH, set PYTHONPATH, and configure a writable cache for transformers
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 ENV PYTHONPATH="/home/appuser/.local/lib/python3.11/site-packages"
+ENV TRANSFORMERS_CACHE="/home/appuser/.cache"
 
 # Expose port 8000
 EXPOSE 8000
