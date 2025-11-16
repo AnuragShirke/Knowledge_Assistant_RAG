@@ -30,8 +30,8 @@ echo "Database URL: $DATABASE_URL"
 echo "Running database migrations..."
 cd /app
 
-# Always use the absolute path for robustness
-ALEMBIC_CMD="/home/appuser/.local/bin/alembic"
+# Always use python -m for robustness
+ALEMBIC_CMD="python -m alembic"
 
 # Check if alembic.ini exists
 if [ ! -f "alembic.ini" ]; then
@@ -51,4 +51,4 @@ fi
 # Start the FastAPI server
 echo "Starting FastAPI server..."
 PORT=${PORT:-8000}
-exec /home/appuser/.local/bin/uvicorn src.main:app --host 0.0.0.0 --port $PORT --log-level info
+exec python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT --log-level info
