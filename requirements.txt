@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 pydantic
-PyMuPDF
+PyMuPDF-wheels
 pdfminer.six
 beautifulsoup4
 sentence-transformers
