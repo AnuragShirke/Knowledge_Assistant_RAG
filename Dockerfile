@@ -53,6 +53,9 @@ COPY --chown=appuser:appgroup ./scripts /app/scripts
 COPY --chown=appuser:appgroup ./alembic /app/alembic
 COPY --chown=appuser:appgroup ./alembic.ini /app/alembic.ini
 
+# Grant ownership of home directory to appuser
+RUN chown -R appuser:appgroup /home/appuser
+
 # Create data directory for SQLite database
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
