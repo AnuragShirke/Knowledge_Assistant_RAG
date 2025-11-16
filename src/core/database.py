@@ -12,7 +12,10 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy import String as SQLString
 
-DATABASE_URL = "sqlite+aiosqlite:///./knowledge_assistant.db"
+import os
+
+# Use the DATABASE_URL from environment variables, with a fallback to SQLite for local development
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./knowledge_assistant.db")
 
 Base: DeclarativeMeta = declarative_base()
 
