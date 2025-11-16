@@ -497,3 +497,6 @@ vulnerability-reports/
 # Compliance reports
 compliance-reports/
 audit-logs/
+
+# Ignore bun binary lockfile for Hugging Face
+rag-quest-hub/bun.lockb
