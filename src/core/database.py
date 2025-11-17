@@ -9,10 +9,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy import String as SQLString
-
-import os
 
 # Use the DATABASE_URL from environment variables, with a fallback to SQLite for local development
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./knowledge_assistant.db")
@@ -20,45 +16,12 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./knowledge_assist
 Base: DeclarativeMeta = declarative_base()
 
 
-class GUID(TypeDecorator):
-    """Platform-independent GUID type.
-    Uses PostgreSQL's UUID type, otherwise uses CHAR(36), storing as stringified hex values.
-    """
-    impl = CHAR
-    cache_ok = True
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
-            return dialect.type_descriptor(UUID(as_uuid=True))
-        else:
-            return dialect.type_descriptor(CHAR(36))
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return value
-        elif dialect.name == 'postgresql':
-            return str(value)
-        else:
-            if not isinstance(value, uuid.UUID):
-                return str(uuid.UUID(value))
-            else:
-                return str(value)
-
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return value
-        else:
-            if not isinstance(value, uuid.UUID):
-                return uuid.UUID(value)
-            return value
-
-
 class User(SQLAlchemyBaseUserTableUUID, Base):
     """User model extending FastAPI-Users base table"""
     __tablename__ = "users"
     
-    # Override id column to use our GUID type for SQLite compatibility
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    # Use the standard UUID type for PostgreSQL
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Additional fields beyond the base user table
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -69,8 +32,8 @@ class DocumentMetadata(Base):
     """Document metadata model for tracking user uploads"""
     __tablename__ = "documents"
     
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     filename = Column(String(255), nullable=False)
     original_size = Column(Integer)
     chunks_count = Column(Integer)
