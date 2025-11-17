@@ -1,61 +1,38 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import Header from '@/components/Header';
-import DocumentUpload from '@/components/DocumentUpload';
-import ChatInterface from '@/components/ChatInterface';
-import { SimpleConnectionStatus } from '@/components/SimpleConnectionStatus';
+import { Header } from '@/components/Header';
+import { ChatInterface } from '@/components/ChatInterface';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
-const Dashboard: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+export const Dashboard: React.FC = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-surface">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
+    <div className="flex flex-col h-screen">
       <Header />
-      
-      {/* Fixed Corner Status Indicator */}
-      <SimpleConnectionStatus />
-      
-      <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-          {/* Left Column - Document Management */}
-          <div className="lg:col-span-1 flex flex-col">
-            <DocumentUpload />
-          </div>
-
-          {/* Right Column - Chat Interface */}
-          <div className="lg:col-span-2 flex flex-col min-h-0">
-            <div className="flex-1 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg shadow-elegant flex flex-col min-h-0">
-              <div className="p-4 border-b border-border/50 flex-shrink-0">
-                <h2 className="text-lg font-semibold">Chat with your documents</h2>
-                <p className="text-sm text-muted-foreground">
-                  Ask questions about the content of your uploaded documents
-                </p>
-              </div>
-              <div className="flex-1 min-h-0">
-                <ChatInterface />
-              </div>
-            </div>
-          </div>
+      <main className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col w-1/4 border-r p-4">
+          <DocumentUpload />
         </div>
+        <div className="flex flex-col flex-1 p-4">
+          <ChatInterface />
+        </div>
+      </main>
+      <div className="p-4 border-t flex justify-between items-center">
+        <ThemeToggle />
+        <Button onClick={handleLogout} variant="ghost">
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </Button>
       </div>
     </div>
   );
 };
-
-export default Dashboard;
