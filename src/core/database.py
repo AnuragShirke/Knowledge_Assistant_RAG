@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import AsyncGenerator
+import os
 
 from fastapi import Depends
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
