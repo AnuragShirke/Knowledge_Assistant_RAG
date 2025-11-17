@@ -255,6 +255,12 @@ def calculate_file_hash(file_path: str) -> str:
         raise FileProcessingError(f"Failed to calculate file hash: {str(e)}", os.path.basename(file_path))
 
 # --- API Endpoints ---
+@app.get("/")
+async def root():
+    """A simple root endpoint to confirm the API is running."""
+    return {"message": "Knowledge Assistant RAG API is running."}
+
+
 @app.post("/upload", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...), 
