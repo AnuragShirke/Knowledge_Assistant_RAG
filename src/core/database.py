@@ -50,7 +50,7 @@ User.documents = relationship("DocumentMetadata", back_populates="user", cascade
 
 
 # Database engine and session configuration
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, connect_args={"statement_cache_size": 0})
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
