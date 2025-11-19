@@ -52,9 +52,24 @@ export const authAPI = {
   }
 };
 
+export interface QueryResponse {
+  answer: string;
+  source_documents: Array<{
+    source: string;
+    text: string;
+    score: number;
+  }>;
+}
+
 export const queryAPI = {
+  ask: async (question: string, timeout?: number): Promise<QueryResponse> => {
+    const response = await api.post<QueryResponse>('/query', { query: question }, {
+      timeout: timeout || 30000, // Default 30 second timeout
+    });
+    return response.data;
+  },
   query: async (question: string) => {
-    const response = await api.post('/query', { query: question });
+    const response = await api.post<QueryResponse>('/query', { query: question });
     return response.data;
   },
 };
