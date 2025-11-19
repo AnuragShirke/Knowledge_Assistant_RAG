@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI, LoginCredentials } from '@/lib/api.ts';
+import { authAPI, LoginCredentials } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { tokenStorage, setupStorageListener } from '@/lib/tokenStorage';
 import { showAuthErrorToast, analyzeError } from '@/lib/errorHandling';
