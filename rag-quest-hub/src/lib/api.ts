@@ -28,4 +28,11 @@ export const authAPI = {
   }
 };
 
+export const queryAPI = {
+  query: async (question: string) => {
+    const response = await api.post('/query', { query: question });
+    return response.data;
+  },
+};
+
 export default api;
