@@ -31,6 +31,15 @@ export function showAuthErrorToast(error: ApiError, type: 'login' | 'register') 
   });
 }
 
+export function showErrorToast(error: ApiError, title: string = "Error") {
+  const message = analyzeError(error);
+  toast({
+    title: title,
+    description: message,
+    variant: "destructive",
+  });
+}
+
 // You can add more complex error handling functions here if needed.
 // For example, a function to create a retry mechanism.
 
