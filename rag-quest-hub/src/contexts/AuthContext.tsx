@@ -164,6 +164,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       const response = await authAPI.login(credentials);
 
+      console.log('Login response received:', response); // Debug log
+
+      // Validate token exists in response
+      if (!response.access_token) {
+        throw new Error('No access token received from server');
+      }
+
       // Store token using secure storage
       tokenStorage.setToken(response.access_token);
       const expirationDate = tokenStorage.getTokenExpiry();
@@ -172,8 +179,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Invalid token received');
       }
 
+      console.log('Token stored, fetching user data...'); // Debug log
+
       // Get user data after successful login
       const userData = await authAPI.getCurrentUser();
+      console.log('User data received:', userData); // Debug log
+      
       setUser(userData);
       setIsAuthenticated(true);
       setTokenExpiresAt(expirationDate);
@@ -185,6 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return true;
     } catch (error: any) {
       console.error('Login failed:', error);
+      console.error('Error response:', error.response?.data); // Debug log
 
       // Use enhanced error handling for authentication errors
       showAuthErrorToast(error, 'login');

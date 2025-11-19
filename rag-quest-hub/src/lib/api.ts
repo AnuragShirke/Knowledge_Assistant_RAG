@@ -22,9 +22,20 @@ api.interceptors.request.use(
   }
 );
 
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
 export const authAPI = {
-  login: async (credentials: any) => {
-    const response = await api.post('/auth/jwt/login', new URLSearchParams(credentials));
+  login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+    const response = await api.post<LoginResponse>('/auth/jwt/login', new URLSearchParams(credentials as any));
+    console.log('Login response:', response.data); // Debug log
     return response.data;
   },
   register: async (userData: any) => {
