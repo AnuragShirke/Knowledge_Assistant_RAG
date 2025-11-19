@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStorage } from './tokenStorage';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -7,7 +8,19 @@ const api = axios.create({
   withCredentials: true, // Important for handling cookies
 });
 
-// You can add interceptors for handling auth tokens here if needed
+// Add request interceptor to attach JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = tokenStorage.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const authAPI = {
   login: async (credentials: any) => {
