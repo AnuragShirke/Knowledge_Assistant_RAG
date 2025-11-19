@@ -35,4 +35,23 @@ export const queryAPI = {
   },
 };
 
+export interface UploadResponse {
+  filename: string;
+  message: string;
+  num_chunks_stored: number;
+}
+
+export const documentAPI = {
+  upload: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<UploadResponse>('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 export default api;
