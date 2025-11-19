@@ -1,7 +1,7 @@
 import { Header } from '@/components/Header';
 import ChatInterface from '@/components/ChatInterface';
 import { DocumentUpload } from '@/components/DocumentUpload';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
