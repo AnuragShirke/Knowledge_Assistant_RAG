@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI, LoginCredentials } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { tokenStorage, setupStorageListener } from '@/lib/tokenStorage';
+import { tokenStorage, setupStorageListener } from '@/lib/tokenStorage.ts';
 import { showAuthErrorToast, analyzeError } from '@/lib/errorHandling';
 
 export interface User {
